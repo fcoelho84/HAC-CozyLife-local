@@ -79,9 +79,22 @@ Built by `SingleWifiDevice.wifiCmd`:
 {"data":{"1":255},"attr":[1]}
 ```
 
-Property `"1"` = power. App treats stored open state as `0` or `1` in cache, but wire ON value is **`255`**.
+Property `"1"` = power / switch bitmask.
 
-### Full ON example (LAN)
+- Single plug / 1-gang: OFF=`0`, ON=`255` (app `DEVICE_ON_MSG` / `DEVICE_OFF_MSG`).
+- Multi-gang wall switch: same DPID `"1"` is a **bitmask**. Bit0 = canal 1 (`0x01`), bit1 = canal 2 (`0x02`), bit2 = canal 3 (`0x04`), … Sending `255` turns **all** gangs on.
+
+### Multi-gang examples
+
+```text
+{"msg":{"data":{"1":1},"attr":[1]},"pv":0,"cmd":3,"sn":"..."}   # only gang 1 on
+{"msg":{"data":{"1":2},"attr":[1]},"pv":0,"cmd":3,"sn":"..."}   # only gang 2 on
+{"msg":{"data":{"1":3},"attr":[1]},"pv":0,"cmd":3,"sn":"..."}   # gang 1+2 on
+```
+
+Toggle one gang: read current bitmask, `OR` / `AND ~bit`, write new value. Preserve other bits.
+
+### Full ON example (LAN, single / all-on)
 
 ```text
 {"msg":{"data":{"1":255},"attr":[1]},"pv":0,"cmd":3,"sn":"1710000000000"}\r\n
@@ -99,7 +112,7 @@ Property `"1"` = power. App treats stored open state as `0` or `1` in cache, but
 {"msg":{"attr":[1,2]},"pv":0,"cmd":2,"sn":"1710000000000"}\r\n
 ```
 
-Response shape is device-dependent. Parser should accept property `"1"` under `msg.data`, `data`, or nested equivalents; treat `0` as off and any other numeric as on.
+Response shape is device-dependent. Parser should accept property `"1"` under `msg.data`, `data`, or nested equivalents. For single channel treat `0` as off and any other as on. For multi-gang mask each bit.
 
 ## Cloud TCP (reference only)
 

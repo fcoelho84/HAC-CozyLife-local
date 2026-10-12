@@ -7,7 +7,7 @@
 3. Type: **Integration** → Add → download **CozyLife Local**
 4. Restart Home Assistant
 5. Settings → Devices & services → Add integration → **CozyLife Local**
-6. Run discovery (or add IP manually) and select switches
+6. Run discovery (or add IP manually), select switches, set **channels** per device
 
 Manual fallback: copy `custom_components/cozylife_local` into `<config>/custom_components/`.
 
@@ -19,11 +19,13 @@ HA host must be on the same L2/L3 network that can broadcast to `255.255.255.255
 
 ## Entities
 
-One `switch.*` per registered device.
+One `switch.*` **per channel**.
 
-- `turn_on` → property `"1" = 255` via TCP cmd `3`
-- `turn_off` → property `"1" = 0` via TCP cmd `3`
+- `channels=1`: `turn_on` → `"1"=255`, `turn_off` → `"1"=0`
+- `channels=N`: each entity toggles bit `N-1` on DPID `"1"` (read-modify-write bitmask)
 - state → polled with TCP cmd `2` (`attr` 1 and 2)
+
+Options flow: change channel count without re-adding devices.
 
 ## Config entry data
 
@@ -37,7 +39,8 @@ One `switch.*` per registered device.
       "name": "optional label",
       "pid": "optional",
       "dtp": "optional",
-      "port": 5555
+      "port": 5555,
+      "channels": 2
     }
   ]
 }
@@ -54,7 +57,7 @@ One `switch.*` per registered device.
 ## Limitations
 
 - Wi‑Fi CozyLife devices only (UDP responders).
-- Single power channel (`"1"`). Multi-gang extras need more RE.
+- Channel count is configured (LAN discovery does not return dpid list).
 - No cloud pairing / `device_key`.
 - No BLE.
 - Optimistic UI if status parse fails after command; next poll corrects state when possible.

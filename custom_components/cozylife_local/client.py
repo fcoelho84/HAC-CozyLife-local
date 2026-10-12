@@ -9,8 +9,9 @@ from typing import Any
 
 from .const import WIFI_TCP_PORT
 from .protocol import (
-    parse_power_state,
+    parse_power_value,
     query_status_frame,
+    set_bitmask_frame,
     set_power_frame,
     split_frames,
 )
@@ -28,19 +29,30 @@ class CozyLifeClient:
     async def set_power(self, on: bool) -> None:
         await self._exchange(set_power_frame(on))
 
-    async def get_power(self) -> bool | None:
+    async def set_bitmask(self, value: int) -> None:
+        await self._exchange(set_bitmask_frame(value))
+
+    async def get_bitmask(self) -> int | None:
         text = await self._exchange(query_status_frame())
         if not text:
             return None
         for chunk in split_frames(text):
-            state = parse_power_state(chunk)
-            if state is not None:
-                return state
-        return parse_power_state(text)
+            value = parse_power_value(chunk)
+            if value is not None:
+                return value
+        return parse_power_value(text)
+
+    async def get_power(self) -> bool | None:
+        value = await self.get_bitmask()
+        if value is None:
+            return None
+        return value != POWER_OFF
 
     async def _exchange(self, payload: bytes) -> str:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: _exchange_sync(self.host, self.port, payload))
+        return await loop.run_in_executor(
+            None, lambda: _exchange_sync(self.host, self.port, payload)
+        )
 
 
 def _exchange_sync(host: str, port: int, payload: bytes) -> str:
@@ -67,3 +79,11 @@ def _exchange_sync(host: str, port: int, payload: bytes) -> str:
 
 def device_from_config(raw: dict[str, Any]) -> CozyLifeClient:
     return CozyLifeClient(host=raw["ip"], port=int(raw.get("port") or WIFI_TCP_PORT))
+
+
+def channels_from_config(raw: dict[str, Any]) -> int:
+    try:
+        channels = int(raw.get("channels") or 1)
+    except (TypeError, ValueError):
+        return 1
+    return max(1, min(channels, 8))

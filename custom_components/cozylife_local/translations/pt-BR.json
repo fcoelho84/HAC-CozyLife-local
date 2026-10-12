@@ -15,12 +15,18 @@
           "selected": "Dispositivos"
         }
       },
+      "channels": {
+        "title": "Canais por dispositivo",
+        "description": "Interruptor multi-tecla usa DPID 1 como bitmask. Coloque o número de teclas (2, 3, 4...). Tomada / 1 tecla fica em 1.",
+        "data": {}
+      },
       "manual": {
         "title": "Adicionar dispositivo CozyLife",
         "data": {
           "ip": "Endereço IP",
           "port": "Porta TCP",
-          "name": "Nome"
+          "name": "Nome",
+          "channels": "Canais (1 = simples, 2+ = multi-tecla)"
         }
       }
     },
@@ -31,6 +37,15 @@
     },
     "abort": {
       "already_configured": "CozyLife Local já está configurado."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Quantidade de canais",
+        "description": "Defina quantas teclas cada interruptor multi-tecla tem. DPID 1 é bitmask (bit0=canal1, bit1=canal2, ...).",
+        "data": {}
+      }
     }
   }
 }

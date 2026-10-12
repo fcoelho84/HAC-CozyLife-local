@@ -15,12 +15,18 @@
           "selected": "Devices"
         }
       },
+      "channels": {
+        "title": "Channels per device",
+        "description": "Multi-gang wall switches use DPID 1 as a bitmask. Set channels to the number of rockers (2, 3, 4...). Single plugs stay at 1.",
+        "data": {}
+      },
       "manual": {
         "title": "Add CozyLife device",
         "data": {
           "ip": "IP address",
           "port": "TCP port",
-          "name": "Name"
+          "name": "Name",
+          "channels": "Channels (1 = single, 2+ = multi-gang)"
         }
       }
     },
@@ -31,6 +37,15 @@
     },
     "abort": {
       "already_configured": "CozyLife Local is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Channel count",
+        "description": "Set how many rockers each multi-gang switch has. DPID 1 is a bitmask (bit0=canal1, bit1=canal2, ...).",
+        "data": {}
+      }
     }
   }
 }

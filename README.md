@@ -19,7 +19,23 @@ HA e os dispositivos precisam estar na mesma rede (UDP broadcast `6095` + TCP `5
 
 1. Escolha **Discover on LAN** (ou IP manual).
 2. Selecione os interruptores encontrados.
-3. Cada um vira um `switch.*` (on/off).
+3. Informe **quantos canais/teclas** cada um tem (`1` = tomada / 1 tecla; `2+` = multi-tecla).
+4. Cada canal vira um `switch.*` separado.
+
+Já instalou? Em **Configure** da integração, ajuste o número de canais por dispositivo e recarregue.
+
+## Multi-tecla (importante)
+
+No CozyLife, interruptor de várias teclas usa o DPID `"1"` como **bitmask**:
+
+| Valor | Efeito |
+|-------|--------|
+| `1` (`0x01`) | só tecla 1 |
+| `2` (`0x02`) | só tecla 2 |
+| `3` (`0x03`) | teclas 1+2 |
+| `255` | **todas** as teclas |
+
+A integração liga/desliga um bit por entidade e preserva os outros.
 
 ## Protocolo (resumo)
 
@@ -27,8 +43,9 @@ HA e os dispositivos precisam estar na mesma rede (UDP broadcast `6095` + TCP `5
 |------|------|
 | Descobrir | UDP `255.255.255.255:6095` |
 | Controlar | TCP `ip:5555` |
-| ON | property `"1"=255`, cmd `3` |
+| ON (1 canal) | property `"1"=255`, cmd `3` |
 | OFF | property `"1"=0`, cmd `3` |
+| Multi-tecla | property `"1"` = bitmask, cmd `3` |
 
 ## Docs
 
@@ -48,4 +65,4 @@ docs/
 README.md
 ```
 
-Domain: `cozylife_local` · versão: `0.1.0`
+Domain: `cozylife_local` · versão: `0.2.0`

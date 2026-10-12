@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_DID, CONF_IP, CONF_MAC, CONF_NAME, DOMAIN
+from .const import CONF_IP, CONF_MAC, CONF_NAME, DOMAIN
 from .coordinator import CozyLifeCoordinator
 
 
@@ -20,26 +20,37 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: CozyLifeCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        CozyLifeSwitch(coordinator, did, cfg)
-        for did, cfg in coordinator.devices.items()
-    )
+    entities: list[CozyLifeSwitch] = []
+    for did, cfg in coordinator.devices.items():
+        channels = coordinator.channels_for(did)
+        for gang_bit in range(channels):
+            entities.append(CozyLifeSwitch(coordinator, did, cfg, gang_bit, channels))
+    async_add_entities(entities)
 
 
 class CozyLifeSwitch(CoordinatorEntity[CozyLifeCoordinator], SwitchEntity):
     _attr_has_entity_name = True
-    _attr_name = None
 
     def __init__(
         self,
         coordinator: CozyLifeCoordinator,
         did: str,
         cfg: dict[str, Any],
+        gang_bit: int,
+        channels: int,
     ) -> None:
         super().__init__(coordinator)
         self._did = did
         self._cfg = cfg
-        self._attr_unique_id = did
+        self._gang_bit = gang_bit
+        self._channels = channels
+        gang_number = gang_bit + 1
+        if channels <= 1:
+            self._attr_name = None
+            self._attr_unique_id = did
+        else:
+            self._attr_name = f"Canal {gang_number}"
+            self._attr_unique_id = f"{did}_{gang_number}"
         connections = set()
         if cfg.get(CONF_MAC):
             connections.add(("mac", str(cfg[CONF_MAC]).lower()))
@@ -53,20 +64,22 @@ class CozyLifeSwitch(CoordinatorEntity[CozyLifeCoordinator], SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        if not self.coordinator.data:
-            return None
-        return self.coordinator.data.get(self._did)
+        return self.coordinator.is_gang_on(self._did, self._gang_bit)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {
+        attrs = {
             "did": self._did,
             "ip": self._cfg.get(CONF_IP),
             "mac": self._cfg.get(CONF_MAC),
+            "channels": self._channels,
         }
+        if self._channels > 1:
+            attrs["channel"] = self._gang_bit + 1
+        return attrs
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        await self.coordinator.async_set_power(self._did, True)
+        await self.coordinator.async_set_gang(self._did, self._gang_bit, True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self.coordinator.async_set_power(self._did, False)
+        await self.coordinator.async_set_gang(self._did, self._gang_bit, False)
