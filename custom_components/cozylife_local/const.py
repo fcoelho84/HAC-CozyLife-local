@@ -1,0 +1,29 @@
+"""Constants for CozyLife Local."""
+
+DOMAIN = "cozylife_local"
+PLATFORMS = ["switch"]
+
+UDP_BROADCAST_ADDR = "255.255.255.255"
+UDP_BROADCAST_PORT = 6095
+WIFI_TCP_PORT = 5555
+MESSAGE_TAIL = "\r\n"
+
+CONF_DEVICES = "devices"
+CONF_DID = "did"
+CONF_IP = "ip"
+CONF_MAC = "mac"
+CONF_NAME = "name"
+CONF_PID = "pid"
+CONF_DTP = "dtp"
+CONF_PORT = "port"
+
+DEFAULT_SCAN_INTERVAL = 15
+DISCOVERY_TIMEOUT = 3.0
+
+ATTR_POWER = "1"
+POWER_OFF = 0
+POWER_ON = 255
+
+CMD_DISCOVER = 0
+CMD_QUERY = 2
+CMD_SET = 3

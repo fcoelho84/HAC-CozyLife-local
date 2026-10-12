@@ -1,0 +1,36 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "CozyLife Local",
+        "description": "Descubra interruptores na LAN ou adicione por IP.",
+        "data": {
+          "mode": "Modo de configuração"
+        }
+      },
+      "discover": {
+        "title": "Selecionar dispositivos CozyLife",
+        "description": "Dispositivos que responderam no UDP 6095.",
+        "data": {
+          "selected": "Dispositivos"
+        }
+      },
+      "manual": {
+        "title": "Adicionar dispositivo CozyLife",
+        "data": {
+          "ip": "Endereço IP",
+          "port": "Porta TCP",
+          "name": "Nome"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Não foi possível alcançar o dispositivo no TCP 5555.",
+      "no_devices": "Nenhum dispositivo respondeu no UDP. Verifique VLAN / isolamento e tente de novo, ou use IP manual.",
+      "no_selection": "Selecione pelo menos um dispositivo."
+    },
+    "abort": {
+      "already_configured": "CozyLife Local já está configurado."
+    }
+  }
+}

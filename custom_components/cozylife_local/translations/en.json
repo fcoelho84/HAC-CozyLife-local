@@ -1,0 +1,36 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "CozyLife Local",
+        "description": "Discover switches on the LAN or add one by IP.",
+        "data": {
+          "mode": "Setup mode"
+        }
+      },
+      "discover": {
+        "title": "Select CozyLife devices",
+        "description": "Devices that answered UDP discovery on port 6095.",
+        "data": {
+          "selected": "Devices"
+        }
+      },
+      "manual": {
+        "title": "Add CozyLife device",
+        "data": {
+          "ip": "IP address",
+          "port": "TCP port",
+          "name": "Name"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the device on TCP 5555.",
+      "no_devices": "No devices answered UDP discovery. Check VLAN / client isolation, then retry or use manual IP.",
+      "no_selection": "Select at least one device."
+    },
+    "abort": {
+      "already_configured": "CozyLife Local is already configured."
+    }
+  }
+}
