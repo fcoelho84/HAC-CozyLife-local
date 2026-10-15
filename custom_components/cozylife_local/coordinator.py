@@ -7,7 +7,7 @@ from datetime import timedelta
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .client import CozyLifeClient, channels_from_config, device_from_config
 from .const import CONF_DID, DEFAULT_SCAN_INTERVAL, DOMAIN, POWER_OFF, POWER_ON
@@ -34,16 +34,14 @@ class CozyLifeCoordinator(DataUpdateCoordinator[dict[str, int | None]]):
 
     async def _async_update_data(self) -> dict[str, int | None]:
         result: dict[str, int | None] = {}
-        errors = 0
         for did, client in self.clients.items():
+            previous = self.data.get(did) if self.data else None
             try:
-                result[did] = await client.get_bitmask()
+                bitmask = await client.get_bitmask()
+                result[did] = bitmask if bitmask is not None else previous
             except OSError as err:
-                errors += 1
                 _LOGGER.debug("Status failed for %s: %s", did, err)
-                result[did] = self.data.get(did) if self.data else None
-        if errors and errors == len(self.clients):
-            raise UpdateFailed("All CozyLife devices unreachable")
+                result[did] = previous
         return result
 
     def is_gang_on(self, did: str, gang_bit: int) -> bool | None:
@@ -60,21 +58,33 @@ class CozyLifeCoordinator(DataUpdateCoordinator[dict[str, int | None]]):
     async def async_set_gang(self, did: str, gang_bit: int, on: bool) -> None:
         client = self.clients[did]
         channels = self.channels_for(did)
-        if channels <= 1:
-            await client.set_power(on)
-            new_value = POWER_ON if on else POWER_OFF
-        else:
-            current = self.data.get(did) if self.data else None
-            if current is None:
-                try:
-                    current = await client.get_bitmask()
-                except OSError:
-                    current = POWER_OFF
-            if current is None:
-                current = POWER_OFF
-            new_value = with_gang_bit(current, gang_bit, on)
-            await client.set_bitmask(new_value)
+        try:
+            new_value = await self._send_gang_state(did, client, channels, gang_bit, on)
+        except OSError as err:
+            _LOGGER.warning("Command failed for %s after reconnect retries: %s", did, err)
+            return
         if self.data is None:
             self.data = {}
         self.data[did] = new_value
         self.async_set_updated_data(dict(self.data))
+
+    async def _send_gang_state(
+        self, did: str, client: CozyLifeClient, channels: int, gang_bit: int, on: bool
+    ) -> int:
+        if channels <= 1:
+            await client.set_power(on)
+            return POWER_ON if on else POWER_OFF
+        current = await self._current_bitmask(did, client)
+        new_value = with_gang_bit(current, gang_bit, on)
+        await client.set_bitmask(new_value)
+        return new_value
+
+    async def _current_bitmask(self, did: str, client: CozyLifeClient) -> int:
+        current = self.data.get(did) if self.data else None
+        if current is not None:
+            return current
+        try:
+            queried = await client.get_bitmask()
+        except OSError:
+            return POWER_OFF
+        return queried if queried is not None else POWER_OFF

@@ -7,7 +7,14 @@ import logging
 import socket
 from typing import Any
 
-from .const import WIFI_TCP_PORT
+from .const import (
+    POWER_OFF,
+    TCP_CONNECT_TIMEOUT,
+    TCP_RECV_TIMEOUT,
+    TCP_RETRIES,
+    TCP_RETRY_DELAY,
+    WIFI_TCP_PORT,
+)
 from .protocol import (
     parse_power_value,
     query_status_frame,
@@ -17,14 +24,13 @@ from .protocol import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-_RECV_TIMEOUT = 2.0
-_CONNECT_TIMEOUT = 2.0
 
 
 class CozyLifeClient:
     def __init__(self, host: str, port: int = WIFI_TCP_PORT) -> None:
         self.host = host
         self.port = port
+        self._lock = asyncio.Lock()
 
     async def set_power(self, on: bool) -> None:
         await self._exchange(set_power_frame(on))
@@ -33,9 +39,7 @@ class CozyLifeClient:
         await self._exchange(set_bitmask_frame(value))
 
     async def get_bitmask(self) -> int | None:
-        text = await self._exchange(query_status_frame())
-        if not text:
-            return None
+        text = await self._exchange(query_status_frame(), require_response=True)
         for chunk in split_frames(text):
             value = parse_power_value(chunk)
             if value is not None:
@@ -48,17 +52,34 @@ class CozyLifeClient:
             return None
         return value != POWER_OFF
 
-    async def _exchange(self, payload: bytes) -> str:
+    async def _exchange(self, payload: bytes, require_response: bool = False) -> str:
+        async with self._lock:
+            return await self._exchange_with_retry(payload, require_response)
+
+    async def _exchange_with_retry(self, payload: bytes, require_response: bool) -> str:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None, lambda: _exchange_sync(self.host, self.port, payload)
-        )
+        last_err: OSError | None = None
+        for attempt in range(TCP_RETRIES):
+            try:
+                text = await loop.run_in_executor(
+                    None, _exchange_sync, self.host, self.port, payload
+                )
+                if not require_response or text:
+                    return text
+                last_err = TimeoutError(f"Empty response from {self.host}:{self.port}")
+            except OSError as err:
+                last_err = err
+            if attempt + 1 < TCP_RETRIES:
+                await asyncio.sleep(TCP_RETRY_DELAY)
+        if last_err is not None:
+            raise last_err
+        return ""
 
 
 def _exchange_sync(host: str, port: int, payload: bytes) -> str:
-    sock = socket.create_connection((host, port), timeout=_CONNECT_TIMEOUT)
+    sock = socket.create_connection((host, port), timeout=TCP_CONNECT_TIMEOUT)
     try:
-        sock.settimeout(_RECV_TIMEOUT)
+        sock.settimeout(TCP_RECV_TIMEOUT)
         sock.sendall(payload)
         chunks: list[bytes] = []
         while True:
@@ -69,8 +90,7 @@ def _exchange_sync(host: str, port: int, payload: bytes) -> str:
             if not data:
                 break
             chunks.append(data)
-            joined = b"".join(chunks)
-            if b"\r\n" in joined:
+            if b"\r\n" in b"".join(chunks):
                 break
         return b"".join(chunks).decode("utf-8", errors="ignore")
     finally:
