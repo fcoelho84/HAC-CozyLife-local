@@ -259,6 +259,41 @@ def ble_config_wifi_packets(
     return ble_fragment_cmd(cmd_hex, protocol_version=protocol_version)
 
 
+def ble_query_status_packets(protocol_version: str = "00") -> list[bytes]:
+    return ble_fragment_cmd("020101", protocol_version=protocol_version)
+
+
+def ble_set_bitmask_packets(
+    bitmask: int, protocol_version: str = "00"
+) -> list[bytes]:
+    cmd_hex = f"030201{int(bitmask) & 0xFF:02x}"
+    return ble_fragment_cmd(cmd_hex, protocol_version=protocol_version)
+
+
+def ble_set_power_packets(
+    on: bool, protocol_version: str = "00"
+) -> list[bytes]:
+    return ble_set_bitmask_packets(
+        POWER_ON if on else POWER_OFF, protocol_version=protocol_version
+    )
+
+
+def parse_ble_notify_bitmask(raw: bytes | bytearray) -> int | None:
+    hex_str = bytes(raw).hex().lower()
+    if len(hex_str) < 12:
+        return None
+    payload = hex_str[4:-2]
+    cmd = payload[:2]
+    if cmd not in ("02", "03", "0a") or len(payload) < 8:
+        return None
+    if payload[4:6] != "01":
+        return None
+    try:
+        return int(payload[6:8], 16)
+    except ValueError:
+        return None
+
+
 def _reverse_mac_hex(mac_hex: str) -> str:
     pairs = [mac_hex[i : i + 2] for i in range(0, len(mac_hex), 2)]
     return ":".join(reversed(pairs)).lower()

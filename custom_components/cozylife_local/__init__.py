@@ -24,7 +24,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded and DOMAIN in hass.data:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
+        coordinator: CozyLifeCoordinator | None = hass.data[DOMAIN].pop(
+            entry.entry_id, None
+        )
+        if coordinator:
+            coordinator.close_all()
     return unloaded
 
 

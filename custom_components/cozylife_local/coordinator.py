@@ -61,11 +61,16 @@ class CozyLifeCoordinator(DataUpdateCoordinator[dict[str, int | None]]):
             d[CONF_DID]: dict(d) for d in devices
         }
         self.clients: dict[str, CozyLifeClient] = {
-            did: device_from_config(cfg) for did, cfg in self.devices.items()
+            did: device_from_config(cfg, hass=hass)
+            for did, cfg in self.devices.items()
         }
         self._last_recovery_ts: float = 0.0
         self._suppress_reload: bool = False
         self._new_device_callbacks: list[Callable[[list[dict[str, Any]]], None]] = []
+
+    def close_all(self) -> None:
+        for client in self.clients.values():
+            client.close()
 
     def register_new_device_callback(
         self, callback_fn: Callable[[list[dict[str, Any]]], None]
@@ -130,6 +135,7 @@ class CozyLifeCoordinator(DataUpdateCoordinator[dict[str, int | None]]):
         cfg[CONF_PORT] = new_port
         if disc.get(CONF_MAC):
             cfg[CONF_MAC] = disc[CONF_MAC]
+            client.mac = str(disc[CONF_MAC])
         if disc.get(CONF_PID):
             cfg[CONF_PID] = disc[CONF_PID]
         if disc.get(CONF_DTP):
@@ -180,17 +186,18 @@ class CozyLifeCoordinator(DataUpdateCoordinator[dict[str, int | None]]):
             norm_m = _norm_mac(disc.get(CONF_MAC))
             if did in known_dids or (norm_m and norm_m in known_macs):
                 continue
-            client = CozyLifeClient(ip, WIFI_TCP_PORT)
+            mac_str = str(disc.get(CONF_MAC) or "")
+            client = CozyLifeClient(
+                ip, WIFI_TCP_PORT, mac=mac_str, did=did, hass=self.hass
+            )
             try:
                 bitmask = await client.get_bitmask()
             except OSError:
-                continue
-            if bitmask is None:
-                continue
+                bitmask = None
             cfg = {
                 CONF_DID: did,
                 CONF_IP: ip,
-                CONF_MAC: str(disc.get(CONF_MAC) or ""),
+                CONF_MAC: mac_str,
                 CONF_NAME: str(disc.get(CONF_NAME) or did),
                 CONF_PID: str(disc.get(CONF_PID) or ""),
                 CONF_DTP: str(disc.get(CONF_DTP) or ""),
