@@ -3,45 +3,52 @@
     "step": {
       "user": {
         "title": "CozyLife Local",
-        "description": "Encontre dispositivos na LAN (UDP porta 6095) ou informe o IP (TCP porta 5555).",
+        "description": "Descubra interruptores na LAN ou adicione por IP.",
         "data": {
-          "mode": "Método de configuração"
+          "mode": "Modo de configuração"
+        }
+      },
+      "discover": {
+        "title": "Selecionar dispositivos CozyLife",
+        "description": "Dispositivos que responderam no UDP 6095.",
+        "data": {
+          "selected": "Dispositivos"
         }
       },
       "channels": {
-        "title": "Teclas do interruptor",
-        "description": "Defina quantas teclas (1–8) cada dispositivo possui.\n\nEncontrados: {devices}",
+        "title": "Canais por dispositivo",
+        "description": "Interruptor multi-tecla usa DPID 1 como bitmask. Coloque o número de teclas (2, 3, 4...). Tomada / 1 tecla fica em 1.",
         "data": {
           "wifi_ssid": "SSID do Wi-Fi (reutilizado automaticamente para interruptores soltos)",
           "wifi_password": "Senha do Wi-Fi"
         }
       },
       "manual": {
-        "title": "IP manual",
-        "description": "O dispositivo deve estar na mesma rede e responder na porta TCP 5555.",
+        "title": "Adicionar dispositivo CozyLife",
         "data": {
-          "host": "Endereço IP",
+          "ip": "Endereço IP",
           "port": "Porta TCP",
-          "channels": "Número de teclas",
+          "name": "Nome",
+          "channels": "Canais (1 = simples, 2+ = multi-tecla)",
           "wifi_ssid": "SSID do Wi-Fi (reutilizado automaticamente para interruptores soltos)",
           "wifi_password": "Senha do Wi-Fi"
         }
       }
     },
     "error": {
-      "no_devices_found": "Nenhum dispositivo CozyLife respondeu ao broadcast UDP (porta 6095). Verifique firewall, VLAN ou tente IP manual.",
-      "cannot_connect": "Não foi possível consultar o dispositivo via TCP (verifique IP, porta 5555 e energia)."
+      "cannot_connect": "Não foi possível alcançar o dispositivo no TCP 5555.",
+      "no_devices": "Nenhum dispositivo respondeu no UDP. Verifique VLAN / isolamento e tente de novo, ou use IP manual.",
+      "no_selection": "Selecione pelo menos um dispositivo."
     },
     "abort": {
-      "already_configured": "Este dispositivo já está configurado.",
-      "no_devices_found": "Nenhum dispositivo para configurar."
+      "already_configured": "CozyLife Local já está configurado."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Opções CozyLife Local",
-        "description": "Ajuste o número de teclas por dispositivo e as credenciais Wi-Fi para reconexão automática.",
+        "title": "Quantidade de canais",
+        "description": "Defina quantas teclas cada interruptor multi-tecla tem. DPID 1 é bitmask (bit0=canal1, bit1=canal2, ...).",
         "data": {
           "wifi_ssid": "SSID do Wi-Fi",
           "wifi_password": "Senha do Wi-Fi"

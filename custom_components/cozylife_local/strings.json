@@ -3,45 +3,52 @@
     "step": {
       "user": {
         "title": "CozyLife Local",
-        "description": "Find devices on the LAN (UDP port 6095) or enter an IP address (TCP port 5555).",
+        "description": "Discover switches on the LAN or add one by IP.",
         "data": {
-          "mode": "Setup method"
+          "mode": "Setup mode"
+        }
+      },
+      "discover": {
+        "title": "Select CozyLife devices",
+        "description": "Devices that answered UDP discovery on port 6095.",
+        "data": {
+          "selected": "Devices"
         }
       },
       "channels": {
-        "title": "Switch gangs",
-        "description": "Set how many switch buttons (1–8) each device has.\n\nFound: {devices}",
+        "title": "Channels per device",
+        "description": "Multi-gang wall switches use DPID 1 as a bitmask. Set channels to the number of rockers (2, 3, 4...). Single plugs stay at 1.",
         "data": {
           "wifi_ssid": "Wi-Fi SSID (reused automatically for loose switches)",
           "wifi_password": "Wi-Fi Password"
         }
       },
       "manual": {
-        "title": "Manual IP",
-        "description": "The device must be on the same network and respond on TCP port 5555.",
+        "title": "Add CozyLife device",
         "data": {
-          "host": "IP address",
+          "ip": "IP address",
           "port": "TCP port",
-          "channels": "Number of gangs (buttons)",
+          "name": "Name",
+          "channels": "Channels (1 = single, 2+ = multi-gang)",
           "wifi_ssid": "Wi-Fi SSID (reused automatically for loose switches)",
           "wifi_password": "Wi-Fi Password"
         }
       }
     },
     "error": {
-      "no_devices_found": "No CozyLife devices responded to UDP broadcast (port 6095). Check firewall, VLAN, or try manual IP.",
-      "cannot_connect": "Could not query device on TCP (check IP, port 5555, and power)."
+      "cannot_connect": "Could not reach the device on TCP 5555.",
+      "no_devices": "No devices answered UDP discovery. Check VLAN / client isolation, then retry or use manual IP.",
+      "no_selection": "Select at least one device."
     },
     "abort": {
-      "already_configured": "This device is already configured.",
-      "no_devices_found": "No devices to configure."
+      "already_configured": "CozyLife Local is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "CozyLife Local options",
-        "description": "Adjust number of gangs per device ID and Wi-Fi credentials for automatic recovery.",
+        "title": "Channel count",
+        "description": "Set how many rockers each multi-gang switch has. DPID 1 is a bitmask (bit0=canal1, bit1=canal2, ...).",
         "data": {
           "wifi_ssid": "Wi-Fi SSID",
           "wifi_password": "Wi-Fi Password"

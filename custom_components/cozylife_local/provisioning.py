@@ -19,8 +19,8 @@ from .const import (
     CONF_WIFI_SSID,
     DOMAIN,
     TCP_CONNECT_TIMEOUT,
-    TCP_PORT,
     TCP_RECV_TIMEOUT,
+    WIFI_TCP_PORT,
 )
 from .protocol import (
     ble_config_wifi_packets,
@@ -147,7 +147,7 @@ async def send_config_wifi_tcp(
     ssid: str,
     password: str,
     bssid: str = "",
-    port: int = TCP_PORT,
+    port: int = WIFI_TCP_PORT,
 ) -> bool:
     try:
         reader, writer = await asyncio.wait_for(
